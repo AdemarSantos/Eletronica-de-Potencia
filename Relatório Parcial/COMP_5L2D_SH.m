@@ -78,11 +78,6 @@ h = 1E-7;                % Passo de cálculo
 t = 0;                   % Tempo inicial de simulação
 tf = 3;                  % Tempo final de simulação
 
-%% Teste: Incluir nova seção
-ademar = 1;
-hpwm = 10^4;
-t = 0:0.05:1;
-x = cos(t); % Teste cosseno
 
 %% Parâmetros de Gravação
 tsave0 = 0;
