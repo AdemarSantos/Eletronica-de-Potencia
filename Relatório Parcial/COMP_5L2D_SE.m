@@ -78,11 +78,11 @@ Vgr = real(vgr);
 %% Parâmetros de Simulação
 h = 1E-7;                % Passo de cálculo
 t = 0;                   % Tempo inicial de simulação
-tf = 3;                  % Tempo final de simulação
+tf = 2;                  % Tempo final de simulação
 
 
 %% Parâmetros de Gravação
-tsave0 = 0.;             % Tempo inicial de gravação
+tsave0 = tf-1/f_ref;             % Tempo inicial de gravação
 tsave = tsave0;          % Tempo de gravação
 npt = 200000;            % Dimensão do vetor de saída de dados
 
@@ -776,11 +776,11 @@ end
 
 %% THD
 
-% wthd_vg = wthdf(vshs, 1/h, f_ref)
-% wthd_vl = wthdf(vses, 1/h, f_ref)
+wthd_vg = wthdf(vshs, 1/h, f_ref)
+wthd_vl = wthdf(vses, 1/h, f_ref)
 % 
-% thd_ig = thdf(igs, 1/h, f_ref)
-% thd_il = thdf(ils, 1/h, f_ref)
+thd_ig = thdf(igs, 1e7, 60)
+thd_il = thdf(ils, 1e7, 60)
 
 %% Média de chaveamento
 m_qgb1 = mean(qgb1s);

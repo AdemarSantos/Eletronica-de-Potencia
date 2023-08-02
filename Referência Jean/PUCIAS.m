@@ -17,7 +17,7 @@ h_s    = 1/f_s;
 fpwm   = f_s;
 h      = 1e-6;                       
 delt   = h;
-t_f    = 1/60;                     
+t_f    = 10/60;                     
 tsave0 = 0; 					
 tsave  = tsave0;
 npt    = (t_f-tsave0)/(h);  		
@@ -479,7 +479,7 @@ atrasoPWM = 0.5*2.*pi*f/f_s;
 % figure(2),plot(st,smdc,st,smi)
 
 % hold on
-figure(4),plot(st,svl_med,st,svl_ref)
+figure(4),plot(jt,jig)
 % 
 % figure(5),plot(sSwSg,spca/Pl),grid on
 % hold on
@@ -511,8 +511,8 @@ figure(4),plot(st,svl_med,st,svl_ref)
 % wthd_vg = wthdf(svg, 1/h, f)
 % wthd_vl = wthdf(svl, 1/h, f)
 
-% thd_ig = thdf(jig, 1/h, f)
-% thd_il = thdf(jil, 1/h, f)
+thd_ig = thdf(jig, 1/h, f)
+thd_il = thdf(jil, 1/h, f)
 
 % figure(1),plot(jt,jig,st,sig)
 % 

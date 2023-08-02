@@ -188,7 +188,7 @@ while t<tf
     vg0_int = vg0_int + vg0*h;
     vl0_int = vl0_int + vl0*h;
     
-    % Tensões de fase
+    % Tensões geradas
     vg = vg0 - va0;
     vl = vl0 - va0;
     

@@ -181,16 +181,16 @@ while t<tf
     end
     vsq = vl;
     
-    vso = 
+%     vso = 
     
     % Derivadas dos fluxos
     dervfsd = vsd - rs*isd;
 	dervfsq = vsq - rs*isq;
-    dervfso = ;
+%     dervfso = ;
     
 	dervfrd = -rr*ird - frq*wm;
 	dervfrq = -rr*irq + frd*wm;
-    dervfro = ;
+%     dervfro = ;
     
     % Fluxos
 	fsd = fsd + dervfsd*h;
