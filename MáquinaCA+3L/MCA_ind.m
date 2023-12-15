@@ -80,13 +80,14 @@ while t <= tf
     % Tensões da rede
     vs2 = Vs*cos(tete-pi23);
 	vs3 = Vs*cos(tete+pi23);
+    vs1 = Vs*cos(tete);
     
     % Abertura súbita de uma das fases
-    if t >= tf/2
-        vs1 = Vs*cos(tete) - Rg*is1;   				
-    else
-        vs1 = Vs*cos(tete);
-    end
+%     if t >= tf/2
+%         vs1 = Vs*cos(tete) - Rg*is1;   				
+%     else
+%         vs1 = Vs*cos(tete);
+%     end
     
 	% Máquina de Indução
 	%---------------------------------------

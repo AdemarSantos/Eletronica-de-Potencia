@@ -564,6 +564,9 @@ while t<tf
         vg30_refs(n) = vg30_ref;
         vl30_refs(n) = vl30_ref;
         
+        % Tensões de referência entre neutros
+        vsg_refs(n) = vsg_ref;
+        vsl_refs(n) = vsl_ref;
         
         % Tensões médias de polo
         % Fase 1
@@ -650,7 +653,7 @@ subplot(3,1,3) % Fase 3
 plot(Ts,ig3s,Ts,il3s,Ts,is3s)
 legend('ig3','il3','is3')
 
-% Tensões de polo instantâneas e de referência
+% Tensões geradas e de referência
 figure(3)
 subplot(3,2,1) % Fase 1
 plot(Ts,vg10s-vs10s,Ts,vg10_refs-vs10_refs,Ts,vg10_meds-vs10_meds),zoom

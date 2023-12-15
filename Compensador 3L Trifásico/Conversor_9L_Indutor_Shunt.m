@@ -39,7 +39,7 @@ thetal_ref = acos(FPl);             % Defasagem tensão-corrente na carga
 
 % Potência da carga
 Nl = Pl/FPl;                    % Potência aparente
-Ql = Nl*sin(thetal);            % Potência reativa
+Ql = Nl*sin(thetal_ref);        % Potência reativa
 Sl = Pl + 1j*Ql;                % Potência complexa
 
 % Impedância da carga
@@ -49,7 +49,7 @@ Xl = imag(Zl);                  % Reatância
 Ll = Xl/w_ref;                  % Indutância
 
 % Amplitude da corrente de regime permanente - Load
-Il = Vl_ref/abs(Zl);            
+Il = mean(Vl_ref)/abs(Zl);            
 
 % Rede
 % Dados das impedâncias - Grid:
@@ -70,7 +70,7 @@ tf = 1;                         % Tempo final da simulação
 %% Parâmetros de Gravação
 tsave0 = 0;                     % Tempo de gravação inicial
 tsave = tsave0;                 % Tempo de gravação
-npt = (tf-t0)*50000;            % Dimensão do vetor de saída de dados
+npt = (tf-t0)*500000;           % Dimensão do vetor de saída de dados
 
 hsave = (tf-tsave0)/npt;        % Passo de gravação dos vetores de saída de dados
 
@@ -88,6 +88,7 @@ vg0_int(1:3) = 0; % Integrais das tensões de polo
 vg0_med(1:3) = 0; % Tensões médias
 
 ig(1:3) = 0;      % Correntes
+ig_ref(1:3) = 0;  % Correntes de referência
 
 % Load
 vl0_ref(1:3) = 0; % Tensões de referência de polo
@@ -95,6 +96,7 @@ vl0_int(1:3) = 0; % Integrais das tensões de polo
 vl0_med(1:3) = 0; % Tensões médias 
 
 il(1:3) = 0;      % Correntes
+il_ref(1:3) = 0;  % Correntes de referência
 
 % Shunt
 vs0_ref(1:3) = 0; % Tensões de referência de polo
@@ -102,6 +104,7 @@ vs0_int(1:3) = 0; % Integrais das tensões de polo
 vs0_med(1:3) = 0; % Tensões médias
 
 is(1:3) = 0;      % Correntes
+is_ref(1:3) = 0;  % Correntes de referência
 
 %% Parâmetros do PI
 % Ganhos proporcional e integral
@@ -181,45 +184,45 @@ while t<tf
         
         % ******************************************
         % Zero auxiliar sg (0s -> 0g)
-        vsg_max =  Vcmed_ref - max([vg_ref(1),vg_ref(2),vg_ref(3)]);
-        vsg_min = -Vcmed_ref - min([vg_ref(1),vg_ref(2),vg_ref(3)]);
+        vsg_max =  Vcmed_ref - max(vg_ref);
+        vsg_min = -Vcmed_ref - min(vg_ref);
         vsg_ref = (vsg_max + vsg_min)/2;
         
         % Zero auxiliar sl (0s -> 0l)
-        vsl_max =  Vcmed_ref - max([vl_ref(1),vl_ref(2),vl_ref(3)]);
-        vsl_min = -Vcmed_ref - min([vl_ref(1),vl_ref(2),vl_ref(3)]);
+        vsl_max =  Vcmed_ref - max(vl_ref);
+        vsl_min = -Vcmed_ref - min(vl_ref);
         vsl_ref = (vsl_max + vsl_min)/2;
         % ******************************************
         
         % *********************************************************
         % Tensão de refência de entrada do conversor - Malha aberta
-        vgs = vg_ref + vsg_ref;
+        vgs_ref = vg_ref + vsg_ref;
         
         % Tensão de refência de saída do conversor
-        vls = vl_ref + vsl_ref;
+        vls_ref = vl_ref + vsl_ref;
         % *********************************************************
         
         %% Fatores de Repartição
         % Fase 1
-        vxmax(1) =  E3L(1)/2 - max([vgs(1),vls(1),0]);
-        vxmin(1) = -E3L(1)/2 - min([vgs(1),vls(1),0]);
+        vxmax(1) =  E3L(1)/2 + max([vgs_ref(1),vls_ref(1),0]);
+        vxmin(1) = -E3L(1)/2 + min([vgs_ref(1),vls_ref(1),0]);
         vx(1) = (vxmax(1)+vxmin(1))/2;
         
         % Fase 2
-        vxmax(2) =  E3L(2)/2 - max([vgs(2),vls(2),0]);
-        vxmin(2) = -E3L(2)/2 - min([vgs(2),vls(2),0]);
+        vxmax(2) =  E3L(2)/2 + max([vgs_ref(2),vls_ref(2),0]);
+        vxmin(2) = -E3L(2)/2 + min([vgs_ref(2),vls_ref(2),0]);
         vx(2) = (vxmax(2)+vxmin(2))/2;
         
         % Fase 3
-        vxmax(3) =  E3L(3)/2 - max([vgs(3),vls(3),0]);
-        vxmin(3) = -E3L(3)/2 - min([vgs(3),vls(3),0]);
+        vxmax(3) =  E3L(3)/2 + max([vgs_ref(3),vls_ref(3),0]);
+        vxmin(3) = -E3L(3)/2 + min([vgs_ref(3),vls_ref(3),0]);
         vx(3) = (vxmax(3)+vxmin(3))/2;
         
         %% Tensões de Referência de Polo
         % ******************************************
         vg0_ref = vx;
-        vs0_ref = vg0_ref - vgs; % Shunt
-        vl0_ref = vg0_ref - vls; % Serie
+        vs0_ref = vg0_ref - vgs_ref; % Shunt
+        vl0_ref = vg0_ref - vls_ref; % Serie
         % ******************************************
         
         %% Tensões médias nos braços
@@ -323,8 +326,8 @@ while t<tf
     %% Tensões geradas
     
     % ******************************************
-    vgs = vg0 - vs0 - vsg_ref;
-    vls = vg0 - vl0 - (vsg_ref - vsl_ref);
+    vgs_ref = vg0 - vs0 - vsg_ref;
+    vls_ref = vg0 - vl0 - (vsg_ref - vsl_ref);
     % ******************************************
     
 %     vsg_ref = (vgs1 + vgs2 + vgs3)/3;
@@ -338,8 +341,8 @@ while t<tf
     %% Integração numérica das correntes ig e il
     
     % ******************************************
-    is = is.*(1 - h*Rs/Ls) + (h/Ls).*(eg - vgs);
-    il = il.*(1 - h*Rl/Ll) + (h/Ll).*(eg - vls); % Carga RL
+    is = is.*(1 - h*Rs/Ls) + (h/Ls).*(eg - vgs_ref);
+    il = il.*(1 - h*Rl/Ll) + (h/Ll).*(eg - vls_ref); % Carga RL
     ig = is + il;
     
     % ******************************************
@@ -416,6 +419,9 @@ while t<tf
         vg30_refs(n) = vg0_ref(3);
         vl30_refs(n) = vl0_ref(3);
         
+        % Tensões de referência entre neutros
+        vsg_refs(n) = vsg_ref;
+        vsl_refs(n) = vsl_ref;
         
         % Tensões médias de polo
         % Fase 1
@@ -464,6 +470,7 @@ while t<tf
         Vc3L1_refs(n) = Vc3L_ref(1);
         Vc3L2_refs(n) = Vc3L_ref(2);
         Vc3L3_refs(n) = Vc3L_ref(3);
+        
     end
 end
 

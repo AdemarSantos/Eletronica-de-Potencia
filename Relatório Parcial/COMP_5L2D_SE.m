@@ -82,7 +82,7 @@ tf = 2;                  % Tempo final de simulação
 
 
 %% Parâmetros de Gravação
-tsave0 = tf-1/f_ref;             % Tempo inicial de gravação
+tsave0 = 0;              % Tempo inicial de gravação
 tsave = tsave0;          % Tempo de gravação
 npt = 200000;            % Dimensão do vetor de saída de dados
 
@@ -176,7 +176,7 @@ while t < tf
     t = t + h;
     %% Tensão da rede
     
-    if t > tf/2
+    if t > 1.5
         sobretensao = 1;
     end
 %     sobretensao = 1;
@@ -831,12 +831,12 @@ figure('name','Tensão e Corrente: Grid') %vsh
 yyaxis right
 plot(Ts,igs,'LineWidth',1)
 ylabel("Corrente [A]",'FontSize',16)
-axis([1 2 -35 35])
+axis([1.9 2 -35 35])
 
 yyaxis left
 plot(Ts,egs,'LineWidth',1)
 ylabel("Tensão [V]",'FontSize',16)
-axis([1 2 -300 300])
+axis([1.9 2 -300 300])
 
 title('$e_g$ vs $i_g$','FontSize',24,'Interpreter','latex')
 legend('$e_g$','$i_g$','FontSize',24,'Interpreter','latex','Location','northwest')
@@ -851,14 +851,25 @@ figure('name','Tensão e Corrente: Load') %vsh
 yyaxis right
 plot(Ts,ils,'LineWidth',1)
 ylabel("Corrente [A]",'FontSize',16)
-axis([1 2 -35 35])
+axis([1.9 2 -35 35])
 
 yyaxis left
 plot(Ts,el_meds,'LineWidth',1)
 ylabel("Tensão [V]",'FontSize',16)
-axis([1 2 -300 300])
+axis([1.9 2 -300 300])
 
 title('$e_l$ vs $i_l$','FontSize',24,'Interpreter','latex')
 legend('$e_l$','$i_l$','FontSize',24,'Interpreter','latex','Location','northwest')
 xlabel("Tempo [s]",'FontSize',16)
+grid minor
+
+
+% Níveis Gerados
+figure('name','Tensão de saída: Níveis Gerados') %vsh
+
+plot(Ts,vshs+vgbs,Ts,vsh_refs+vgb_refs,'LineWidth',1)
+title('$e_l$','FontSize',24,'Interpreter','latex')
+legend('$e_l$','FontSize',24,'Interpreter','latex','Location','northwest')
+xlabel("Tempo [s]",'FontSize',16)
+% axis([1.9 2 -35 35])
 grid minor

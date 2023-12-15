@@ -41,7 +41,7 @@ Rg = 100;                % Resistência a ser colocada na fase d
 
 
 %---------------- Condições do Sistema ------------------
-E = 440;                 % Tensão do barramento CC
+E = 750;                 % Tensão do barramento CC
 u = 0.5 ;                % Definição do fator de repartição
 
 cm=0;                    % Conjugado mecânico
@@ -52,8 +52,8 @@ ws=2*pi*60;              % Frequência angular da rede
 Vs=220*sqrt(2);          % Amplitude dos fasores da rede   
 tete=0;                  % Ângulo dos fasores da rede
 
-Vg_ref = 220*sqrt(2);    % Amplitude da tensão de referência braço G
-Vl_ref = 220*sqrt(2);    % Amplitude da tensão de referência braço L
+Vg_ref = 1.1*220*sqrt(2);    % Amplitude da tensão de referência braço G
+Vl_ref = 1.1*220*sqrt(2);    % Amplitude da tensão de referência braço L
 
 f_ref = 60;              % Frequência de referência
 w_ref = 2*pi*f_ref;      % Frequência angular de referência
@@ -133,9 +133,12 @@ while t<tf
         vu_ref = E*(u - 1/2) - u*vu_ref_max + (u - 1)*vu_ref_min;
         
         % Tensões de polo de referência
-        va0_ref = vu_ref;
-        vg0_ref = vg_ref + vu_ref;
-        vl0_ref = vl_ref + vu_ref;
+%         va0_ref = vu_ref;
+%         vg0_ref = vg_ref + vu_ref;
+%         vl0_ref = vl_ref + vu_ref;
+        vg0_ref = (Vg_ref)*cos(w_ref*t);
+        va0_ref = (Vg_ref)*cos(w_ref*t+2*pi/3);
+        vl0_ref = (Vg_ref)*cos(w_ref*t-2*pi/3);
     end
     % Progressão da onda triangular
     vtriangle = vtriangle + sign*dtriangle*h;
@@ -181,23 +184,26 @@ while t<tf
     end
     vsq = vl;
     
-%     vso = 
-    
     % Derivadas dos fluxos
     dervfsd = vsd - rs*isd;
 	dervfsq = vsq - rs*isq;
-%     dervfso = ;
+
     
 	dervfrd = -rr*ird - frq*wm;
 	dervfrq = -rr*irq + frd*wm;
-%     dervfro = ;
+
     
     % Fluxos
-	fsd = fsd + dervfsd*h;
-	fsq = fsq + dervfsq*h;
-	fso = fso + dervfso*h;
+% 	fsd = fsd + dervfsd*h;
+% 	fsq = fsq + dervfsq*h;
+% 	fso = fso + dervfso*h;
+%     
+%     frd = frd + dervfrd*h;
+% 	frq = frq + dervfrq*h;
     
-    frd = frd + dervfrd*h;
+    fsd = fsd + dervfsd*h;
+	fsq = fsq + dervfsq*h;
+	frd = frd + dervfrd*h;
 	frq = frq + dervfrq*h;
     
     % Conjugado (Produto vetorial entre os vetores de fluxo girantes)
@@ -276,6 +282,9 @@ end
 
 % SIMULAÇÃO DO LADO G
 %---- Saída do conversor G
+figure(1),plot(Ts,corrente1, Ts,corrente2, Ts,corrente3),zoom
+title('Correntes');
+
 
 figure('Name','Tensão de saída do Conversor G')
 plot(Ts,vgs,Ts,vg0_meds-va0_meds,'r-','LineWidth',1.5),zoom
@@ -313,3 +322,28 @@ title('Corrente do circuito: Lado L')
 xlabel("Tempo (s)")
 ylabel("Corrente (A)")
 grid()
+
+%---- Saída do conversor
+
+figure('Name','Tensão de saída')
+subplot(3,1,1)
+plot(Ts,vl0s,'k-',Ts,vl0_meds,'r-','LineWidth',1.5),zoom
+legend('v_{1_{pwm}}','v_{1_{med}}')
+xlabel("Tempo (s)")
+ylabel("Tensão (V)")
+axis([0.1 0.13 -410 410])
+grid minor
+subplot(3,1,2)
+plot(Ts,va0s,'k-',Ts,va0_meds,'-','LineWidth',1.5),zoom
+legend('v_{2_{pwm}}','v_{2_{med}}')
+xlabel("Tempo (s)")
+ylabel("Tensão (V)")
+axis([0.1 0.13 -410 410])
+grid minor
+subplot(3,1,3)
+plot(Ts,vg0s,'k-',Ts,vg0_meds,'y-','LineWidth',1.5),zoom
+legend('v_{3_{pwm}}','v_{3_{med}}')
+xlabel("Tempo (s)")
+ylabel("Tensão (V)")
+axis([0.1 0.13 -410 410])
+grid minor
