@@ -36,11 +36,11 @@ w         = 2*pi*f;
 %%
 % for SwSg = 0.5:0.1:1.5
 % SwSg      = 0.8;
-SwSg      = 1;
+SwSg      = 0.5;
 Eg_rms    = 220*SwSg;                 
 Vlref     = 220;             
-Pl        = 1000;                       
-atrasoPWM = 0.5*2.*pi*f/f_s;
+Pl        = 2000;                       
+atrasoPWM = 0*0.5*2.*pi*f/f_s;
 
 %for FPl = 0.1:0.01:1
 % for alpha = (-25*pi/180):(pi/180):(25*pi/180)
@@ -68,7 +68,7 @@ atrasoPWM = 0.5*2.*pi*f/f_s;
     t_armazena = 0;
 
     %% Parâmetros da carga
-    FPl = 0.8;
+    FPl = 0.7;
     Sl  = Pl/FPl*exp(acos(FPl)*1i);   
     Zl  = conj((Vlref^2)/(Sl));	
     Rl  = real(Zl);                  
@@ -78,12 +78,13 @@ atrasoPWM = 0.5*2.*pi*f/f_s;
     
     %% Parâmetros da rede      
     Lg = 5e-3;
-    Rg = 0.2;
+    Rg = 0.1;
     Xg = Lg*(2*pi*fg);
 
     %% Cálculo do valor eficaz da corrente drenada da rede (rms)
     Ig    = roots([Rg -Eg_rms Pl]);
-    Ig    = min(Ig);
+    Ig    = min(Ig)
+    Ig*sqrt(2)
     faseg = atan((-Ig*Xg)/(Eg_rms - Ig*Rg));
     Vgref = -Ig*Xg/sin(faseg);
     
@@ -94,7 +95,7 @@ atrasoPWM = 0.5*2.*pi*f/f_s;
     fasel = alpha; 
 
     %% Definindo a tensão de Ea e Eb
-    Vcc     = 340;
+    Vcc     = 370;
     Ea      = Vcc/2;
     Eb      = Vcc;
     Ea_inst = Vcc/2;
@@ -479,7 +480,7 @@ atrasoPWM = 0.5*2.*pi*f/f_s;
 % figure(2),plot(st,smdc,st,smi)
 
 % hold on
-figure(4),plot(jt,jig)
+% figure(4),plot(jt,jig)
 % 
 % figure(5),plot(sSwSg,spca/Pl),grid on
 % hold on
@@ -511,8 +512,8 @@ figure(4),plot(jt,jig)
 % wthd_vg = wthdf(svg, 1/h, f)
 % wthd_vl = wthdf(svl, 1/h, f)
 
-thd_ig = thdf(jig, 1/h, f)
-thd_il = thdf(jil, 1/h, f)
+% thd_ig = thdf(jig, 1/h, f)
+% thd_il = thdf(jil, 1/h, f)
 
 % figure(1),plot(jt,jig,st,sig)
 % 

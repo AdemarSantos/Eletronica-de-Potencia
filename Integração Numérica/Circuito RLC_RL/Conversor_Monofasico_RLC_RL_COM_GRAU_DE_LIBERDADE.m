@@ -77,7 +77,7 @@ while(t < tf)
         vu_ref_max = E/2 - max(VS_ref);
         vu_ref_min = -E/2 - min(VS_ref);
         vu_ref = u*vu_ref_max + (1-u)*vu_ref_min; %Definição da tensão de liberdade das tensões nos polos de referência
-        
+        vu_ref = vu_ref_min;
         v10_ref =  vs_ref/2 + vu_ref;
         v20_ref = -vs_ref/2 + vu_ref;
     end
@@ -126,6 +126,8 @@ while(t < tf)
         v10_refs(n)=v10_ref;      %#ok<SAGROW>
         v20_refs(n)=v20_ref;      %#ok<SAGROW>
         vtriangles(n)= vtriangle; %#ok<SAGROW>
+        q1s(n) = q1;
+        q2s(n) = q2;
     end
 end
 %Fs = logspace(0,5,npt);
@@ -177,6 +179,13 @@ title(['v20'],'FontSize',18)
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
 axis([42E-4 42E-4+2/60 -100 100])
+grid()
+
+figure(5)
+plot(Ts,q1s,Ts,q2s,'r-','LineWidth',1.5),zoom
+title(['v20'],'FontSize',18)
+% legend('vs_{pwm}','vs_{med}','vs_{med}')
+xlabel("Tempo (s)")
 grid()
 
 %---- Saída do inversor

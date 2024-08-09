@@ -8,8 +8,8 @@ tic
   
 %% Condições do Sistema
 SwSg = 0.5;              % Sobretensão ou afundamento
-Vgm = 220*sqrt(2)*SwSg;  % Amplitude da tensão da rede
-Vel_ref = 220*sqrt(2);   % Amplitude da tensão de referência sobre a carga
+Vgm = 110*sqrt(2)*SwSg;  % Amplitude da tensão da rede
+Vel_ref = 110*sqrt(2);   % Amplitude da tensão de referência sobre a carga
 
 thetal_ref = 0;          % Fase da tensão de referência braço L
 
@@ -18,7 +18,7 @@ w_ref = 2*pi*f_ref;      % Frequência angular de referência
 
 % Barramento 3L (Conversor A) 
 m = 0.5;
-Vc3L_ref = 340;
+Vc3L_ref = 370;
 % Vc3L_ref = 110*sqrt(2)/m;  % Tensão de referência do barramento 3L [V]
 Vc3L = 0*Vc3L_ref;         % Tensão medida no barramento 3L         
 Ea = Vc3L_ref;           % Tensão de referência nominal do barramento 3L
@@ -30,7 +30,7 @@ Cap = 2.2E-3;
 %   CARGA
 % Dados da carga
 Pl = 1000;               % Potência ativa consumida na carga [W]
-FPl = 0.9; % Ind.        % Fator de potência na carga
+FPl = 0.7; % Ind.        % Fator de potência na carga
 thetal = acos(FPl);      % Defasagem tensão-corrente na carga
 
 % Potência da carga
@@ -72,7 +72,7 @@ tf = 2.5;                % Tempo final de simulação
 
 
 %% Parâmetros de Gravação
-tsave0 = tf-1/60;
+tsave0 = tf-4/60;
 tsave = tsave0;          % Tempo de gravação
 npt = 200000;            % Dimensão do vetor de saída de dados
 
@@ -127,17 +127,17 @@ Ig0 = 3;
 
 %% Cálculo de Regime Permanente
     %% Cálculo da Amplitude da corrente drenada pela rede
-%     fasegl = cos(thetal_ref - acos(FPl));
-%     Igc = min(roots([Rg/2, -(Vgm/2 + Rg*Il*fasegl), Pl+(Rg*Il^2)/2]));
+    fasegl = cos(thetal_ref - acos(FPl));
+    Igc = min(roots([Rg/2, -(Vgm/2 + Rg*Il*fasegl), Pl+(Rg*Il^2)/2]));
 
     
     %% Amplitude  e Fase da tensão gerada na compensação shunt
-%     Is     = sqrt(Igc^2 + Il^2 - 2*Igc*Il * fasegl);
-%     faseIs = acos((Igc^2 + Is^2 - Il^2)/(2*Igc*Is));
-%     Vsh    = Vgm - (Rg + 1i*Xg)*Ig*(cos(faseIs)+1i*sin(faseIs));
-% 
-%     Vshref = abs(Vsh);
-%     fasesh = angle(Vsh);
+    Is     = sqrt(Igc^2 + Il^2 - 2*Igc*Il * fasegl);
+    faseIs = acos((Igc^2 + Is^2 - Il^2)/(2*Igc*Is));
+    Vsh    = Vgm - (Rg + 1i*Xg)*Ig*(cos(faseIs)+1i*sin(faseIs));
+
+    Vshref = abs(Vsh);
+    fasesh = angle(Vsh);
 
     
 %% Inicialização da onda triangular (Normalizada)
@@ -157,9 +157,6 @@ sobretensao = 0;
 Imax = 50;
 kii = 1000.0;
 kpi = 10.;
-
-kic = 20.;
-kpc = 0.5;
 
 hpwm = 1/10000;
 iw = 0.0027;
@@ -284,8 +281,8 @@ while t<tf
             Vs = [vl_ref,vg_ref,0];
             vxmax =  Vc3L_ref/2 - max(Vs);
             vxmin = -Vc3L_ref/2 - min(Vs);
-            vx = (vxmax+vxmin)/2;
-            
+%             vx = (vxmax+vxmin)/2;
+            vx = vxmax;
 %             vga0_ref = vx;
 %             vsa0_ref = vga0_ref - vsh_ref;
 %             vla0_ref = vga0_ref - vse_ref;
@@ -324,7 +321,7 @@ while t<tf
     
     %% Progressão da portadora triangular
     vtri = vtri + sign*dtri*h;
-    vt3L = vtri*Vc3L;
+    vt3L = vtri*Vc3L_ref;
     
     %% Estado das chaves
     % 3L
@@ -539,29 +536,29 @@ ylabel("Tensão (V)")
 grid('minor')
 
 % ---- Estados da chaves
-% figure('name','Estado da chave qga')
-% plot(Ts,100*qgs,Ts, vg0_refs,Ts,vt3Ls,'r-'),zoom
-% title('Estado da chave qga','FontSize',18)
-% legend('Chave $q_{ga}$','$v_{ga0_{ref}}$','$v_{3L_{tri}}$','FontSize',16,'Interpreter','latex')
-% xlabel("Tempo (s)")
-% ylabel("Tensão (V)")
-% grid('minor')
+figure('name','Estado da chave qga')
+plot(Ts,100*qgs,Ts, vg0_refs,Ts,vt3Ls,'r-'),zoom
+title('Estado da chave qga','FontSize',18)
+legend('Chave $q_{ga}$','$v_{ga0_{ref}}$','$v_{3L_{tri}}$','FontSize',16,'Interpreter','latex')
+xlabel("Tempo (s)")
+ylabel("Tensão (V)")
+grid('minor')
 
-% figure('name','Estado da chave qla')
-% plot(Ts,100*qls,Ts, vl0_refs,Ts,vt3Ls,'r-'),zoom
-% title('Estado da chave qla','FontSize',18)
-% legend('Chave $q_{la}$','$v_{la0_{ref}}$','$v_{3L_{tri}}$','FontSize',16,'Interpreter','latex')
-% xlabel("Tempo (s)")
-% ylabel("Tensão (V)")
-% grid('minor')
+figure('name','Estado da chave qla')
+plot(Ts,100*qls,Ts, vl0_refs,Ts,vt3Ls,'r-'),zoom
+title('Estado da chave qla','FontSize',18)
+legend('Chave $q_{la}$','$v_{la0_{ref}}$','$v_{3L_{tri}}$','FontSize',16,'Interpreter','latex')
+xlabel("Tempo (s)")
+ylabel("Tensão (V)")
+grid('minor')
 
-% figure('name','Estado da chave qsa')
-% plot(Ts,100*qss,Ts, vs0_refs,Ts,vt3Ls,'r-'),zoom
-% title('Estado da chave qsa','FontSize',18)
-% legend('Chave $q_{sa}$','$v_{sa0_{ref}}$','$v_{3L_{tri}}$','FontSize',16,'Interpreter','latex')
-% xlabel("Tempo (s)")
-% ylabel("Tensão (V)")
-% grid('minor')
+figure('name','Estado da chave qsa')
+plot(Ts,100*qss,Ts, vs0_refs,Ts,vt3Ls,'r-'),zoom
+title('Estado da chave qsa','FontSize',18)
+legend('Chave $q_{sa}$','$v_{sa0_{ref}}$','$v_{3L_{tri}}$','FontSize',16,'Interpreter','latex')
+xlabel("Tempo (s)")
+ylabel("Tensão (V)")
+grid('minor')
 
 % figure('name','Triangulares')
 % plot(200*vtris,'r-'),zoom

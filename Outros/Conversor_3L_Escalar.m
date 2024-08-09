@@ -3,7 +3,7 @@
 format long
 clear;clc;close all;
 tic
-  
+
 %% Condições do Sistema
 SwSg = 1;              % Sobretensão ou afundamento
 Vgm = 110*sqrt(2)*SwSg;  % Amplitude da tensão da rede

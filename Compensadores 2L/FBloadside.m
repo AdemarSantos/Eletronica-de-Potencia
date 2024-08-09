@@ -1,4 +1,4 @@
-% Full Bridge: Grid-Side
+% Full Bridge: Load-Side
 % Ademar Alves
 
 clear;clc;close all;
@@ -16,9 +16,9 @@ w_ref = 2*pi*f_ref;      % Frequência angular de referência
 
 % Barramento 2L 
 m = 0.5;
-Vc2L_ref = 380;
+Vc2L_ref = 360;
 % Vc2L_ref = 110*sqrt(2)/m;  % Tensão de referência do barramento 2L [V]
-Vc2L = 0.5*Vc2L_ref;           % Tensão medida no barramento 2L         
+Vc2L = 1*Vc2L_ref;           % Tensão medida no barramento 2L         
 Ea = Vc2L_ref;               % Tensão de referência nominal do barramento 2L
 
 Cap = 8.8E-3;            % Capacitância do barramento
@@ -27,7 +27,7 @@ Cap = 8.8E-3;            % Capacitância do barramento
 
 %   CARGA
 % Dados da carga
-Pl = 1000;               % Potência ativa consumida na carga [W]
+Pl = 2000;               % Potência ativa consumida na carga [W]
 FPl = 0.8; % Ind.        % Fator de potência na carga
 thetal = acos(FPl);      % Defasagem tensão-corrente na carga
 
@@ -88,7 +88,7 @@ if0 = 0;
 
 % 2L
 vsa0_int = 0;            % valor inicial da integral da tensão no polo sa
-vga0_int = 0;            % valor inicial da integral da tensão no polo ga
+vla0_int = 0;            % valor inicial da integral da tensão no polo la
 
 % Carga
 el_int = 0;              % Valor inicial da integral da tensão na carga
@@ -101,8 +101,8 @@ k=0;                     % Índice de salvamento da potência
 
 %% Parâmetros do controlador 
 % Controlador PI
-Kp = 0.2;
-Ki = 15;
+Kp = 0.5; %0.2
+Ki = 20;  %15
 
 P_error = 0;
 I_error = 0;
@@ -142,8 +142,8 @@ atrasoPWM = 0.5*2.*pi*f_ref/ftri; % Atraso gerado no PWM
 sobretensao = 0;
 
 %% PI ressonante
-Imax = 50;
-kii = 100.0;
+Imax = 40;
+kii = 1000.0;
 kpi = 10.;
 
 kic = 20.;
@@ -184,20 +184,20 @@ while t<tf
         I_error = I_error + htri*Ki*Vc2L_error;  % Erro integral
 
 %       Saturador
-        if(I_error > Imax) 
-            I_error = Imax;
-        elseif(I_error < -Imax)
-            I_error = -Imax;
-        end
+%         if(I_error > Imax) 
+%             I_error = Imax;
+%         elseif(I_error < -Imax)
+%             I_error = -Imax;
+%         end
         
         Ig = P_error + I_error + Ig0;            % Amplitude ig*
         
 %       Saturador
-        if(Ig > Imax) 
-            Ig = Imax;
-        elseif(Ig < -Imax)
-            Ig = -Imax;
-        end
+%         if(Ig > Imax) 
+%             Ig = Imax;
+%         elseif(Ig < -Imax)
+%             Ig = 0;
+%         end
         
         ig_ref = Ig*cos(w_ref*t - thetag);       % ig*
         ig_error = (ig_ref - ig);                % Erro ig
@@ -237,22 +237,22 @@ while t<tf
 %             vsh_ref = -Ea;
 %         end
         
-        %% Tensões de referência       
+        %% Tensões de referência
 %         vsh_ref = eg - Rs*is - (Ls/htri)*is_error; % Preditivo
         vel_ref = Vel_ref*cos(w_ref*t + thetal_ref);        
         vse_ref = eg - vel_ref;
         
         %% Cálculo das tensões de polo
-        vga0_ref = vse_ref;
-        vsa0_ref = vse_ref - vsh_ref;
+        vla0_ref = -vse_ref;
+        vsa0_ref = -vsh_ref;
         
         %% Tensões médias nos braços
         % 2L
         vsa0_med = vsa0_int/htri;
-        vga0_med = vga0_int/htri;
+        vla0_med = vla0_int/htri;
         
         vsa0_int = 0;
-        vga0_int = 0;
+        vla0_int = 0;
         
         % Carga
         el_med = el_int/htri;        
@@ -281,34 +281,27 @@ while t<tf
         qsa = 0; % Chave aberta
     end
     
-    if vga0_ref >= vt2L % Estado das chaves (Braço g)
-        qga = 1; % Chave fechada
+    if vla0_ref >= vt2L % Estado das chaves (Braço l)
+        qla = 1; % Chave fechada
     else
-        qga = 0; % Chave aberta
+        qla = 0; % Chave aberta
     end
-    
-%     if vla0_ref >= vt2L % Estado das chaves (Braço l)
-%         qla = 1; % Chave fechada (IGBT em condução)
-%     else
-%         qla = 0; % Chave aberta (IGBT em corte)
-%     end
     
     %% Tensões de polo
     % 2L
     vsa0 = (2*qsa - 1)*(Vc2L/2);
-    vga0 = (2*qga - 1)*(Vc2L/2);
+    vla0 = (2*qla - 1)*(Vc2L/2);
     
     %% Tensões geradas
-    vse = vga0;
-    vsh = vga0 - vsa0;
+    vse = -vla0;
+    vsh = -vsa0;
     el = eg - vse;
     
     %% Integração das tensões de polo
     % 2L
     vsa0_int = vsa0_int + vsa0*h;
-    vga0_int = vga0_int + vga0*h;
+    vla0_int = vla0_int + vla0*h;
     
-    % Carga
     el_int = el_int + el*h;
     
     %% Integração numérica das correntes ig e il
@@ -320,11 +313,10 @@ while t<tf
     % 2L
     Rp2L = 5e10;
     Rs2L = 0.0;
-    ik2L = ig*qga - is*qsa;
+    ik2L = -il*qla - is*qsa;
     ic2L = (Rp2L*ik2L - Vc2L)/(Rp2L + Rs2L);   % Corrente de entrada barramento 2L
     Vc2L = Vc2L + (h/Cap)*ic2L;                % Tensão barramento 2L
 %     Vc2L = Vc2L_ref*1.00;
-    
     
     %% Salvamento das variáveis
     if tsave <= t
@@ -339,11 +331,11 @@ while t<tf
         
         % Estado das chaves
         qss(n) = qsa;
-        qgs(n) = qga;
+        qls(n) = qla;
         
         % Tensões de polo de referência
         vs0_refs(n) = vsa0_ref;
-        vg0_refs(n) = vga0_ref;
+        vl0_refs(n) = vla0_ref;
         
         % Tensões de referência 
         vsh_refs(n) = vsh_ref;
@@ -352,20 +344,22 @@ while t<tf
 
         % Tensões de polo
         vs0s(n) = vsa0;
-        vg0s(n) = vga0;
+        vl0s(n) = vla0;
         
         % Tensões geradas
         vshs(n) = vsh;
         vses(n) = vse;    
-        els(n) = el; % Carga  
+        els(n) = el; % Carga
 
         % Tensões médias
         vs0_meds(n) = vsa0_med;
-        vg0_meds(n) = vga0_med; 
+        vl0_meds(n) = vla0_med;   
         el_meds(n) = el_med; % Carga
         
         % Corrente de referência do controlador
         ig_refs(n) = ig_ref;
+        il_refs(n) = il_ref;
+        is_refs(n) = is_ref;
         
         % Correntes
         iss(n) = is;
@@ -383,7 +377,6 @@ while t<tf
         % Correntes de referência
         ig_refs(n) = ig_ref;
         il_refs(n) = il_ref;
-%         is_refs(n) = is_ref;
         
         % Erros
         ig_errors(n) = ig_error;
@@ -395,20 +388,20 @@ toc
 
 %% Plots
 
-% ---- Tensões Vsh e Vse
+% ---- Tensões Vg e Vl
 figure('name','Tensão Vsh') %vsh
 plot(Ts,vsh_refs,...
-     Ts,vg0_meds-vs0_meds,...
+     Ts,-vs0_meds,...
      Ts,vshs),zoom
 title('Tensão vsh','FontSize',18)
 legend('vsh_{ref}','vsh_{med}','vsh_{pwm}','FontSize',16)
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
-% axis([0 tf -(Vc2L_ref*2-20) (Vc2L_ref*2+20)])
+% axis([0 tf -Vc2L_ref-20 Vc2L_ref+20])
 
 figure('name','Tensão Vse') %vse
 plot(Ts,vse_refs,...
-     Ts,vg0_meds,...
+     Ts,-vl0_meds,...
      Ts,vses),zoom
 title('Tensão vse','FontSize',18)
 legend('vse_{ref}','vse_{med}','vse_{pwm}','FontSize',16)
@@ -437,13 +430,13 @@ legend('ig','il','is','FontSize',18)
 grid()
 
 % ---- Correntes de Referência
-% figure('Name','Corrente de Referência do circuito: Lado G, S e L')
-% plot(Ts,ig_refs,Ts,il_refs,Ts,is_refs,'r-','LineWidth',1),zoom
-% title('Corrente de Referência do circuito: ig, il e ia')
-% xlabel("Tempo (s)")
-% ylabel("Corrente (A)")
-% legend('ig','il','is','FontSize',18)
-% grid()
+figure('Name','Corrente de Referência do circuito: Lado G, S e L')
+plot(Ts,ig_refs,Ts,il_refs,Ts,is_refs,'r-','LineWidth',1),zoom
+title('Corrente de Referência do circuito: ig, il e ia')
+xlabel("Tempo (s)")
+ylabel("Corrente (A)")
+legend('ig_{ref}','il_{ref}','is_{ref}','FontSize',18)
+grid()
 
 % ---- Barramento
 figure('name','Tensão no barramento 2L')
@@ -472,7 +465,7 @@ grid('minor')
 % grid('minor')
 
 figure('name','Estado da chave qsa')
-plot(Ts,100*qss,Ts, vs0_refs,Ts,vt2Ls,'r-'),zoom
+plot(Ts,100*qss,Ts,vs0_refs,Ts,vt2Ls,'r-'),zoom
 title('Estado da chave qsa','FontSize',18)
 legend('Chave $q_{sa}$','$v_{sa0_{ref}}$','$v_{2L_{tri}}$','FontSize',16,'Interpreter','latex')
 xlabel("Tempo (s)")

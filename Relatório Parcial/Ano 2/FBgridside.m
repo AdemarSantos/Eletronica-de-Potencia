@@ -6,8 +6,8 @@ tic
   
 %% Condições do Sistema
 SwSg = 1.0;              % Sobretensão ou afundamento
-Vgm = 110*sqrt(2)*SwSg;  % Amplitude da tensão da rede
-Vel_ref = 110*sqrt(2);   % Amplitude da tensão de referência sobre a carga
+Vgm = 220*sqrt(2)*SwSg;  % Amplitude da tensão da rede
+Vel_ref = 220*sqrt(2);   % Amplitude da tensão de referência sobre a carga
 
 thetal_ref = 0;          % Fase da tensão de referência braço L
 
@@ -18,7 +18,7 @@ w_ref = 2*pi*f_ref;      % Frequência angular de referência
 m = 0.5;
 Vc2L_ref = 380;
 % Vc2L_ref = 110*sqrt(2)/m;  % Tensão de referência do barramento 2L [V]
-Vc2L = 0.5*Vc2L_ref;           % Tensão medida no barramento 2L         
+Vc2L = 0*Vc2L_ref;           % Tensão medida no barramento 2L         
 Ea = Vc2L_ref;               % Tensão de referência nominal do barramento 2L
 
 Cap = 8.8E-3;            % Capacitância do barramento
@@ -28,7 +28,7 @@ Cap = 8.8E-3;            % Capacitância do barramento
 %   CARGA
 % Dados da carga
 Pl = 1000;               % Potência ativa consumida na carga [W]
-FPl = 0.8; % Ind.        % Fator de potência na carga
+FPl = 0.7; % Ind.        % Fator de potência na carga
 thetal = acos(FPl);      % Defasagem tensão-corrente na carga
 
 % Potência da carga
@@ -47,8 +47,8 @@ Il = Vel_ref/abs(Zl);
 
 % %   SHUNT
 % % Dados do Shunt
-Rs = 0.1;                % Resistência
-Ls = 5e-3;               % Indutância
+Rs = 0.2;                % Resistência
+Ls = 7e-3;               % Indutância
 Xs = Ls*w_ref;           % Reatância
 
 % Fator de potência
