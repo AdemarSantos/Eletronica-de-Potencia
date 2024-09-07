@@ -5,7 +5,7 @@
 clear;
 close all;
 clc;
-% ola
+
 %% Inicializações 1
 i = 0;
 p = 0;
