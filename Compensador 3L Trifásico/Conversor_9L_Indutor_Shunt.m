@@ -1,6 +1,7 @@
 % Conversor 9L trifásico - 3x 3L com neutros interconectados
+% Ademar A. dos Santos Jr
 
-clear;clc;close all;
+close all;clear;clc;
 
 %% Início da Simulação
 tic
@@ -8,17 +9,17 @@ tic
 %% Condições do Sistema
 SwSg(1:3) = 1.;                 % Sobretensão ou afundamento
 Vgm(1:3) = 110*sqrt(2).*SwSg;   % Amplitude da tensão da rede
-Vl_ref = 110*sqrt(2);           % Amplitude da tensão sobre a carga
+Vl_ref(1:3) = 110*sqrt(2);      % Amplitude das tensões de fase da carga
 
-Vl_ref(1:3) = Vl_ref;           % Amplitude das tensões de fase da carga
 fasel_ref(1,3) = 0;             % Fases das tensões geradas pelo conversor para cada carga
 
 f_ref = 60;                     % Frequência de referência
 w_ref = 2*pi*f_ref;             % Frequência angular de referência
 
 % Barramento 3L de cada fase
-Vc3L_ref(1:3) = 180;            % Tensão de referência do barramento 3L [V]
-Vc3L = Vc3L_ref;                % Tensão medida no barramento 3L         
+Vc3L_ref(1:3) = 340;            % Tensão de referência do barramento 3L [V]
+% Vc3L = Vc3L_ref;                % Tensão medida no barramento 3L  
+Vc3L = (340).*[1 1 1]; 
 E3L = Vc3L_ref;                 % Tensão de referência nominal do barramento 3L
 
 % Tensão média dos barramentos
@@ -26,7 +27,7 @@ Vcmed_ref = (Vc3L_ref(1)+Vc3L_ref(2)+Vc3L_ref(3))/3; % Tenão de referência mé
 Vcmed = Vcmed_ref;              % Tensão média medida         
 Emed = Vcmed_ref;               % Tensão de referência média nominal
 
-Cbar = 4.4E-3;                  % Capacitância do barramento
+Cbar = 8.8E-3;                  % Capacitância do barramento
 
 %% Impedâncias de entrada e saída
 % Assumindo cargas simétricas
@@ -70,7 +71,7 @@ tf = 1;                         % Tempo final da simulação
 %% Parâmetros de Gravação
 tsave0 = 0;                     % Tempo de gravação inicial
 tsave = tsave0;                 % Tempo de gravação
-npt = (tf-t0)*500000;           % Dimensão do vetor de saída de dados
+npt = (tf-t0)*50000;           % Dimensão do vetor de saída de dados
 
 hsave = (tf-tsave0)/npt;        % Passo de gravação dos vetores de saída de dados
 
@@ -94,6 +95,7 @@ ig_ref(1:3) = 0;  % Correntes de referência
 vl0_ref(1:3) = 0; % Tensões de referência de polo
 vl0_int(1:3) = 0; % Integrais das tensões de polo
 vl0_med(1:3) = 0; % Tensões médias 
+vel_int(1:3) = 0;
 
 il(1:3) = 0;      % Correntes
 il_ref(1:3) = 0;  % Correntes de referência
@@ -133,10 +135,16 @@ atrasoPWM = 0.5*2.*pi*f_ref/ftri; % Atraso gerado no PWM
 while t<tf
     t = t + h;
     
+    if(t>tf/2)
+        Vgm(1:3) = 110*sqrt(2).*1.5;
+    end
+    
     % Tensões da rede
     eg(1) = Vgm(1)*cos(w_ref*t);                   % Fase 1
     eg(2) = Vgm(2)*cos(w_ref*t + (120)*(pi/180));  % Fase 2
-    eg(3) = Vgm(3)*cos(w_ref*t - (120)*(pi/180));  % Fase 3
+%     eg(3) = Vgm(3)*cos(w_ref*t - (120)*(pi/180));  % Fase 3
+    eg(3) = -(eg(1)+eg(2));
+
     
     if t >= ttri
         ttri = ttri + htri;    % Atualização da onda triangular
@@ -156,42 +164,72 @@ while t<tf
         ig_ref(2) = Ig(2)*cos(w_ref*t - thetag_ref(2) + (120)*(pi/180)); % ig2*
         
         % Fase 3
-        ig_ref(3) = Ig(3)*cos(w_ref*t - thetag_ref(3) - (120)*(pi/180)); % ig3*
-        
+%         ig_ref(3) = Ig(3)*cos(w_ref*t - thetag_ref(3) - (120)*(pi/180)); % ig3*
+        ig_ref(3) = -(ig_ref(1)+ig_ref(2));
+
         % Erro
         ig_error = (ig_ref - ig);                 % Erro ig
         
         %
         il_ref(1) = Il*cos(w_ref*t - thetal_ref);
         il_ref(2) = Il*cos(w_ref*t - thetal_ref + (120)*(pi/180));
-        il_ref(3) = Il*cos(w_ref*t - thetal_ref - (120)*(pi/180));
-        
+%         il_ref(3) = Il*cos(w_ref*t - thetal_ref - (120)*(pi/180));
+        il_ref(3) = -(il_ref(1)+il_ref(2));
+
         is_ref = ig_ref - il_ref;
         is_error = is_ref - is;
         
         %% Tensão de referência na rede - Controle Preditivo
         
         % ******************************************
-        vg_ref = eg - Rs.*ig - (Ls/htri).*ig_error;        
+%         vg_ref = eg - Rs.*ig - (Ls/htri).*ig_error;        
         % ******************************************
+        
+        % ******************************************
+        vg_ref = eg - Rs.*is - (Ls/htri).*is_error;        
+        % ******************************************
+        
+        % *************** SATURADOR ****************** 
+        if(vg_ref(1) > Vc3L_ref(1)*1.5)
+            vg_ref(1) = Vc3L_ref(1)*1.5;
+        elseif(vg_ref(1) < -Vc3L_ref(1)*1.5)
+            vg_ref(1) = -Vc3L_ref(1)*1.5;
+        end
+        
+        if(vg_ref(2) > Vc3L_ref(2)*1.5)
+            vg_ref(2) = Vc3L_ref(2)*1.5;
+        elseif(vg_ref(2) < -Vc3L_ref(2)*1.5)
+            vg_ref(2) = -Vc3L_ref(2)*1.5;
+        end
+        
+        if(vg_ref(3) > Vc3L_ref(3)*1.5)
+            vg_ref(3) = Vc3L_ref(3)*1.5;
+        elseif(vg_ref(3) < -Vc3L_ref(3)*1.5)
+            vg_ref(3) = -Vc3L_ref(3)*1.5;
+        end
         
         % Tensão de referência na carga 
         vel_ref(1) = Vl_ref(1)*cos(w_ref*t + fasel_ref(1));
         vel_ref(2) = Vl_ref(2)*cos(w_ref*t + (120)*(pi/180) + fasel_ref(2));
         vel_ref(3) = Vl_ref(3)*cos(w_ref*t - (120)*(pi/180) + fasel_ref(3)); 
         
+        vel_ref(3) = -(vel_ref(1)+vel_ref(2));
+        
         vl_ref = eg - vel_ref;
+        vl_ref(3) = -(vl_ref(1)+vl_ref(2));
         
         % ******************************************
         % Zero auxiliar sg (0s -> 0g)
         vsg_max =  Vcmed_ref - max(vg_ref);
         vsg_min = -Vcmed_ref - min(vg_ref);
         vsg_ref = (vsg_max + vsg_min)/2;
+        vsg_ref = 0;
         
         % Zero auxiliar sl (0s -> 0l)
         vsl_max =  Vcmed_ref - max(vl_ref);
         vsl_min = -Vcmed_ref - min(vl_ref);
         vsl_ref = (vsl_max + vsl_min)/2;
+        vsl_ref = 0;
         % ******************************************
         
         % *********************************************************
@@ -230,10 +268,12 @@ while t<tf
         vs0_med = vs0_int./htri;
         vg0_med = vg0_int./htri;
         vl0_med = vl0_int./htri;
+        vel_med = vel_int./htri;
         
         vs0_int = 0.*vs0_int;
         vg0_int = 0.*vg0_int;
         vl0_int = 0.*vl0_int;
+        vel_int = 0.*vel_int;
         
         %% Onda triangular (Normalizada)
         if vtri <= 0
@@ -247,7 +287,7 @@ while t<tf
     
     %% Progressão da Portadora Triangular
     vtri = vtri + sign*dtri*h;
-    vt3L = vtri.*Vc3L;
+    vt3L = vtri.*Vc3L_ref;
     
     %% Estado das Chaves
     % Fase 1
@@ -308,26 +348,32 @@ while t<tf
     end
     
     %% Tensões de Polo
-    % Fase 1
-    vs0 = (2*qs - 1).*(Vc3L/2);
-    vg0 = (2*qg - 1).*(Vc3L/2);
-    vl0 = (2*ql - 1).*(Vc3L/2);
+%   Fase 1
+    vs0(1) = (2*qs(1) - 1)*(Vc3L(1)/2);
+    vg0(1) = (2*qg(1) - 1)*(Vc3L(1)/2);
+    vl0(1) = (2*ql(1) - 1)*(Vc3L(1)/2);
     
-%     % Fase 2
-%     vs0(2) = (2*qs(2) - 1)*(Vc3L(2)/2);
-%     vg0(2) = (2*qg(2) - 1)*(Vc3L(2)/2);
-%     vl0(2) = (2*ql(2) - 1)*(Vc3L(2)/2);
-% 
-%     % Fase 3
-%     vs0(3) = (2*qs(3) - 1)*(Vc3L(3)/2);
-%     vg0(3) = (2*qg(3) - 1)*(Vc3L(3)/2);
-%     vl0(3) = (2*ql(3) - 1)*(Vc3L(3)/2);
+    % Fase 2
+    vs0(2) = (2*qs(2) - 1)*(Vc3L(2)/2);
+    vg0(2) = (2*qg(2) - 1)*(Vc3L(2)/2);
+    vl0(2) = (2*ql(2) - 1)*(Vc3L(2)/2);
+
+    % Fase 3
+    vs0(3) = (2*qs(3) - 1)*(Vc3L(3)/2);
+    vg0(3) = (2*qg(3) - 1)*(Vc3L(3)/2);
+    vl0(3) = (2*ql(3) - 1)*(Vc3L(3)/2);
     
     %% Tensões geradas
     
     % ******************************************
-    vgs_ref = vg0 - vs0 - vsg_ref;
-    vls_ref = vg0 - vl0 - (vsg_ref - vsl_ref);
+%     vgs = vg0 - vs0 - vsg_ref;
+%     vls = vg0 - vl0 - (vsg_ref - vsl_ref);
+    % ******************************************
+   
+    % ******************************************
+    vgs = vg0 - vs0;
+    vls = vg0 - vl0;
+    els = eg - vls;
     % ******************************************
     
 %     vsg_ref = (vgs1 + vgs2 + vgs3)/3;
@@ -337,12 +383,13 @@ while t<tf
     vs0_int = vs0_int + vs0.*h;
     vg0_int = vg0_int + vg0.*h;
     vl0_int = vl0_int + vl0.*h;
+    vel_int = vel_int + els.*h;
     
     %% Integração numérica das correntes ig e il
     
     % ******************************************
-    is = is.*(1 - h*Rs/Ls) + (h/Ls).*(eg - vgs_ref);
-    il = il.*(1 - h*Rl/Ll) + (h/Ll).*(eg - vls_ref); % Carga RL
+    is = is.*(1 - h*Rs/Ls) + (h/Ls).*(eg - vgs);
+    il = il.*(1 - h*Rl/Ll) + (h/Ll).*(eg - vls); % Carga RL
     ig = is + il;
     
     % ******************************************
@@ -372,8 +419,8 @@ while t<tf
         % Correntes
         % Fase 1
         ig1s(n) = ig(1);
-        il1s(n) = il(2);
-        is1s(n) = is(3);
+        il1s(n) = il(1);
+        is1s(n) = is(1);
         
         % Fase 2
         ig2s(n) = ig(2);
@@ -384,6 +431,23 @@ while t<tf
         ig3s(n) = ig(3);
         il3s(n) = il(3);
         is3s(n) = is(3);
+        
+        % Correntes de referência
+        % Fase 1
+        ig1_refs(n) = ig_ref(1);
+        il1_refs(n) = il_ref(1);
+        is1_refs(n) = is_ref(1);
+        
+        % Fase 2
+        ig2_refs(n) = ig_ref(2);
+        il2_refs(n) = il_ref(2);
+        is2_refs(n) = is_ref(2);
+        
+        % Fase 3
+        ig3_refs(n) = ig_ref(3);
+        il3_refs(n) = il_ref(3);
+        is3_refs(n) = is_ref(3);
+        
         
         
         % Tensões instantâneas de polo 
@@ -402,6 +466,18 @@ while t<tf
         vg30s(n) = vg0(3);
         vl30s(n) = vl0(3);
         
+        % Tensões instantâneas geradas
+        % Fase 1
+        vg1s(n) = vgs(1);
+        vl1s(n) = vls(1);
+        
+        % Fase 2
+        vg2s(n) = vgs(2);
+        vl2s(n) = vls(2);
+        
+        % Fase 3
+        vg3s(n) = vgs(3); 
+        vl3s(n) = vls(3);
         
         % Tensões de referência de polo 
         % Fase 1
@@ -439,6 +515,10 @@ while t<tf
         vg30_meds(n) = vg0_med(3);
         vl30_meds(n) = vl0_med(3);
         
+        % Carga
+        vel1_meds(n) = vel_med(1);
+        vel2_meds(n) = vel_med(2);
+        vel3_meds(n) = vel_med(3);
         
         % Estado das chaves
         % Fase 1
@@ -478,22 +558,63 @@ end
 toc
 
 %% Plots
+figure(40)
+subplot(3,3,1)
+plot(Ts,ig1_refs,Ts,ig1s),zoom
+title('g fase1')
+
+subplot(3,3,2)
+plot(Ts,is1_refs,Ts,is1s),zoom
+title('s fase1')
+
+subplot(3,3,3)
+plot(Ts,il1_refs,Ts,il1s),zoom
+title('l fase1')
+
+subplot(3,3,4)
+plot(Ts,ig2_refs,Ts,ig2s),zoom
+title('g fase2')
+
+subplot(3,3,5)
+plot(Ts,is2_refs,Ts,is2s),zoom
+title('s fase2')
+
+subplot(3,3,6)
+plot(Ts,il2_refs,Ts,il2s),zoom
+title('l fase2')
+
+subplot(3,3,7)
+plot(Ts,ig3_refs,Ts,ig3s),zoom
+title('g fase3')
+
+subplot(3,3,8)
+plot(Ts,is3_refs,Ts,is3s),zoom
+title('s fase3')
+
+subplot(3,3,9)
+plot(Ts,il3_refs,Ts,il3s),zoom
+title('l fase3')
+
+
+
+
+
 % Rede - Tensão e corrente
 figure(1)
 subplot(3,1,1)
 plot(Ts, eg1s, Ts, 10*ig1s),zoom
 title('Tensão e corrente da rede - Fase 1')
-legend('$e_{g1}$','$i_{g1}$','Fontsize',20,'interpreter','latex')
+legend('$e_{g1}$','$10i_{g1}$','Fontsize',20,'interpreter','latex')
 
 subplot(3,1,2)
 plot(Ts, eg2s, Ts, 10*ig2s),zoom
 title('Tensão e corrente da rede - Fase 2')
-legend('$e_{g2}$','$i_{g2}$','Fontsize',20,'interpreter','latex')
+legend('$e_{g2}$','$10i_{g2}$','Fontsize',20,'interpreter','latex')
 
 subplot(3,1,3)
 plot(Ts, eg3s, Ts, 10*ig3s),zoom
 title('Tensão e corrente da rede - Fase 3')
-legend('$e_{g3}$','$i_{g3}$','Fontsize',20,'interpreter','latex')
+legend('$e_{g3}$','$10i_{g3}$','Fontsize',20,'interpreter','latex')
 
 % Correntes
 figure(2)
@@ -589,3 +710,58 @@ subplot(3,1,3)
 plot(Ts,Vc3L3_refs,Ts,Vc3L3s)
 title('Barramento 3')
 legend('Ref','Lido')
+
+
+
+
+figure('name','Tensão no barramento 2L')
+ax = subplot(3,1,1);
+plot(Ts,Vc3L1s,Ts,Vc3L2s,Ts,Vc3L3s,Ts,Vc3L1_refs,'r--');
+% ax = findobj(gcf, 'Type', 'axes');
+ax.XAxis.FontSize = 12;
+ax.YAxis.FontSize = 12;
+% title('Tensão do barramento 2L','FontSize',18)
+legend('$E_1$','$E_2$','$E_3$','$E^*$','FontSize',18,'Interpreter','latex')
+xlabel("Tempo ($s$)",'Interpreter','latex','FontSize',16)
+ylabel("Tens\~ao ($V$)",'Interpreter','latex','FontSize',16)
+grid('minor')
+axis([0 1.0 0 400])
+
+
+bx=subplot(3,1,2);
+yyaxis left
+plot(Ts,eg1s,Ts,eg2s,Ts,eg3s),zoom
+bx.YAxis(1).FontSize = 12;
+bx.YAxis(2).FontSize = 12;
+bx.XAxis.FontSize = 12;
+legend('$e_{g_1}$','$e_{g_2}$','$e_{g_3}$','FontSize',18,'Interpreter','latex')
+xlabel("Tempo ($s$)",'Interpreter','latex','FontSize',16)
+ylabel("Tens\~ao ($V$)",'Interpreter','latex','FontSize',16)
+grid('minor')
+axis([0 1.0 -300 300])
+
+yyaxis right
+plot(Ts,ig1s,Ts,ig2s,Ts,ig3s),zoom
+legend('$e_{g1}$','$e_{g2}$','$e_{g3}$','$i_{g1}$','$i_{g2}$','$i_{g3}$','FontSize',18,'Interpreter','latex')
+xlabel("Tempo ($s$)",'Interpreter','latex','FontSize',16)
+ylabel("Corrente ($A$)",'Interpreter','latex','FontSize',16)
+axis([0 1.0 -50 50])
+grid('minor')
+
+cx = subplot(3,1,3);
+plot(Ts,vel1_meds,Ts,vel2_meds,Ts,vel3_meds),zoom
+cx.XAxis.FontSize = 12;
+cx.YAxis.FontSize = 12;
+% title('Tensão vel','FontSize',18)
+legend('$e_{l_{1 med}}$','$e_{l_{2 med}}$','$e_{l_{3 med}}$','FontSize',18,'Interpreter','latex')
+xlabel("Tempo ($s$)",'Interpreter','latex','FontSize',16)
+ylabel("Tens\~ao ($V$)",'Interpreter','latex','FontSize',16)
+grid('minor')
+axis([0 1.0 -250 250])
+
+
+
+% Correntes
+figure(10)
+plot(Ts,vg10_meds-vl10_meds,Ts,vg20_meds-vl20_meds,Ts,vg30_meds-vl30_meds)
+

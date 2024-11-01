@@ -45,7 +45,7 @@ ttriangle = 0;           % Tempo inicial da onda triangular
 ftriangle = 10E3;        % Frequência da onda triangular de 10 kHz
 htriangle = 1/ftriangle; % Período da onda triangular
 vtriangle = E/2;         % Tensão máxima da onda triangular
-dtriangle = E/htriangle; % Derivada da onda triangular (?V/?T)
+dtriangle = E/htriangle; % Derivada da onda triangular (dV/dT)
 sign = -1;               % Sinal inicial da derivada (Comportamento decrescente)
 
 %x = sawtooth(2*pi*ftriangle*t,1/2);
@@ -76,8 +76,8 @@ while(t < tf)
         v20_int=0;
         
         vs_ref  =  V_ref*cos(w_ref*t); % Tensão de referência na saída do inversor
-        v10_ref =  vs_ref/2; %+ vu_ref
-        v20_ref = -vs_ref/2; %+ vu_ref
+        v10_ref =  vs_ref/2;
+        v20_ref = -vs_ref/2;
     end
     
     vtriangle = vtriangle + sign*dtriangle*h;
@@ -103,11 +103,13 @@ while(t < tf)
     v10_int = v10_int + v10*h;
     v20_int = v20_int + v20*h;
     
+    % Integração Numérica
     vv = v10-v20;
     ii = (1-(h*Ri/Li))*ii + (h/Li)*(vv-vc); % Corrente do ramo i
     vc = vc + (h/C)*(ii-il);                % Tensão do capacitor
     il = (1-(h*Rl/Ll))*il + (h/Ll)*vc;      % Corrente do ramo l
-
+    
+    % Salvamento das variáveis
     if tsave <= t
         tsave = tsave + hsave;
         n = n + 1;
@@ -125,74 +127,74 @@ while(t < tf)
     end
 end
 
-figure('Name','Tensão no Polo 10')
-plot(Ts,v10_refs,Ts,v10_meds,'r-','LineWidth',1)
-title('Tensão de saída e média no polo 10 de referência')
-legend('Tensão de saída','Tensão média')
-xlabel("Tempo (s)")
-ylabel("Tensão (A)")
-grid()
-
 
 %---- Saída do inversor
 figure('Name','Tensão de Saída do Inversor')
-plot(Ts,vvs,'r-','LineWidth',1.5),zoom
+plot(Ts,vvs,Ts,v10_meds-v20_meds,Ts,v10_refs-v20_refs,'k-','LineWidth',1.5),zoom
 title('Tensão de saída do inversor')
+legend('Tensão de saída','Tensão média','Tensão de Referência')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
-grid()
-%---- Corrente do circuito
-figure('Name','Corrente do Ramo i')
-plot(Ts,iis,'r-','LineWidth',1)
-title('Corrente do ramo i')
-xlabel("Tempo (s)")
-ylabel("Corrente (A)")
-grid()
-%---- Corrente da carga
-figure('Name','Corrente do Ramo l')
-plot(Ts,ils,'r-','LineWidth',1)
-title('Corrente do ramo l (Carga)')
-xlabel("Tempo (s)")
-ylabel("Corrente (A)")
-grid()
-%---- Tensão no capacitor
-figure('Name','Tensão no Capacitor')
-plot(Ts,vcs,'r-','LineWidth',1)
-title('Tensão no capacitor')
-xlabel("Tempo (s)")
-ylabel("Tensão (A)")
-grid()
+grid minor
+
+% %---- Corrente do circuito
+% figure('Name','Corrente do Ramo i')
+% plot(Ts,iis,'r-','LineWidth',1)
+% title('Corrente do ramo i')
+% xlabel("Tempo (s)")
+% ylabel("Corrente (A)")
+% grid minor
+
+% %---- Corrente da carga
+% figure('Name','Corrente do Ramo l')
+% plot(Ts,ils,'r-','LineWidth',1)
+% title('Corrente do ramo l (Carga)')
+% xlabel("Tempo (s)")
+% ylabel("Corrente (A)")
+% grid minor
+
+% %---- Tensão no capacitor
+% figure('Name','Tensão no Capacitor')
+% plot(Ts,vcs,'r-','LineWidth',1)
+% title('Tensão no capacitor')
+% xlabel("Tempo (s)")
+% ylabel("Tensão (A)")
+% grid minor
+
 %---- Tensão no polo 10 de referência 
 figure('Name','Tensão no Polo 10')
 plot(Ts,v10_refs,Ts,v10_meds,'r-','LineWidth',1)
 title('Tensão de saída e média no polo 10 de referência')
-legend('Tensão de saída','Tensão média')
+legend('Tensão de Referência','Tensão média')
 xlabel("Tempo (s)")
 ylabel("Tensão (A)")
-grid()
+grid minor
+
 %---- Tensão no polo 20 de referência 
 figure('Name','Tensão no Polo 20')
 plot(Ts,v20_refs,Ts,v20_meds,'r-','LineWidth',1)
 title('Tensão de saída e média no polo 20 de referência')
-legend('Tensão de saída','Tensão média')
+legend('Tensão de Referência','Tensão média')
 xlabel("Tempo (s)")
 ylabel("Tensão (A)")
-grid()
+grid minor
+
 %---- Tensão de referência e da carga
 figure('Name','Tensão de Referência e da Carga')
 plot(Ts,vs_refs,Ts,vcs,'r-','LineWidth',1)
 title('Tensão de referência e da carga')
-legend('Tensão de referência','Tensão da carga')
+legend('Tensão de Referência','Tensão da carga')
 xlabel("Tempo (s)")
 ylabel("Tensão (A)")
-grid()
+grid minor
+
 %---- Tensão do sinal triangular
 figure('Name','Sinal triangular')
-plot(Ts,vtriangles,'ro-','LineWidth',2)
+plot(Ts,vtriangles,'ro-','LineWidth',2),zoom
 title('Sinal triangular (Portadora)')
 xlabel("Tempo (s)")
 ylabel("Tensão (A)")
-axis([0 8*htriangle -3.8 3.8])
-grid()
+% axis([0 8*htriangle -3.8 3.8])
+grid minor
 
 %{%}

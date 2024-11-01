@@ -1,7 +1,5 @@
-% Conversor 3L.
-% Standby para condições nominais, porém operando com baixo índice de
-% modulação.
-
+% Compensador 3L
+% Ademar Alves
 
 clear;clc;
 tic
@@ -23,8 +21,7 @@ Vc3L_ref = 370;
 Vc3L = 0*Vc3L_ref;         % Tensão medida no barramento 3L         
 Ea = Vc3L_ref;           % Tensão de referência nominal do barramento 3L
 
-% Cap = 4.4E-3;            % Capacitância do barramento
-Cap = 2.2E-3;
+Cap = 4.4E-3;            % Capacitância do barramento
 %% Impedâncias de entrada e saída
 
 %   CARGA
@@ -55,7 +52,7 @@ Il = Vel_ref/abs(Zl);
 
 %   REDE
 % Rg = 0.2;                % Resistência
-Rg = 0.1;
+Rg = 0.2;
 %Lg = 7e-3;               % Indutância
 Lg = 5e-3;
 Xg = Lg*w_ref;           % Reatância
@@ -66,18 +63,17 @@ thetag = acos(FPg);      % Defasagem tensão-corrente da rede
 
 
 %% Parâmetros de Simulação
-h = 1E-7;                % Passo de cálculo
+h = 1E-6;                % Passo de cálculo
 t = 0;                   % Tempo inicial de simulação
-tf = 2.5;                % Tempo final de simulação
+tf = 0.5;                % Tempo final de simulação
 
 
 %% Parâmetros de Gravação
 tsave0 = tf-4/60;
 tsave = tsave0;          % Tempo de gravação
-npt = 200000;            % Dimensão do vetor de saída de dados
+npt = 20000;            % Dimensão do vetor de saída de dados
 
-% hsave = (tf-tsave0)/npt; % Passo de de gravação dos vetores de saída de dados
-hsave = 10^-7;
+hsave = (tf-tsave0)/npt; % Passo de de gravação dos vetores de saída de dados
 npt = (tf-tsave0)/hsave;
 if hsave < h             % Sendo o Passo de gravação menor que o passo de cálculo (Saturação)
     hsave = h;           % Defina o passo de gravação = passo de cálculo
@@ -127,17 +123,17 @@ Ig0 = 3;
 
 %% Cálculo de Regime Permanente
     %% Cálculo da Amplitude da corrente drenada pela rede
-    fasegl = cos(thetal_ref - acos(FPl));
-    Igc = min(roots([Rg/2, -(Vgm/2 + Rg*Il*fasegl), Pl+(Rg*Il^2)/2]));
-
-    
-    %% Amplitude  e Fase da tensão gerada na compensação shunt
-    Is     = sqrt(Igc^2 + Il^2 - 2*Igc*Il * fasegl);
-    faseIs = acos((Igc^2 + Is^2 - Il^2)/(2*Igc*Is));
-    Vsh    = Vgm - (Rg + 1i*Xg)*Ig*(cos(faseIs)+1i*sin(faseIs));
-
-    Vshref = abs(Vsh);
-    fasesh = angle(Vsh);
+%     fasegl = cos(thetal_ref - acos(FPl));
+%     Igc = min(roots([Rg/2, -(Vgm/2 + Rg*Il*fasegl), Pl+(Rg*Il^2)/2]));
+% 
+%     
+%     %% Amplitude  e Fase da tensão gerada na compensação shunt
+%     Is     = sqrt(Igc^2 + Il^2 - 2*Igc*Il * fasegl);
+%     faseIs = acos((Igc^2 + Is^2 - Il^2)/(2*Igc*Is));
+%     Vsh    = Vgm - (Rg + 1i*Xg)*Ig*(cos(faseIs)+1i*sin(faseIs));
+% 
+%     Vshref = abs(Vsh);
+%     fasesh = angle(Vsh);
 
     
 %% Inicialização da onda triangular (Normalizada)
@@ -154,38 +150,38 @@ atrasoPWM = 0.5*2.*pi*f_ref/ftri; % Atraso gerado no PWM
 sobretensao = 0;
 
 %% PI ressonante pt1
-Imax = 50;
-kii = 1000.0;
-kpi = 10.;
-
-hpwm = 1/10000;
-iw = 0.0027;
-
-arg = w_ref*hpwm;
-F1 = cos(arg);
-F2 = sin(arg)*iw;
-F3 = 2.0*kii*sin(arg)*iw; 
-F4=-w_ref*sin(arg);
-F5=cos(arg);
-F6=(cos(arg)-1.0)*2.0*kii;
-
-% Inicialização
-ei1 = 0;
-ei1a = 0;
-xaa1 = 0;
-xa1 = 0;
-xb1 = 0;
+% Imax = 50;
+% kii = 1000.0;
+% kpi = 10.;
+% 
+% hpwm = 1/10000;
+% iw = 0.0027;
+% 
+% arg = w_ref*hpwm;
+% F1 = cos(arg);
+% F2 = sin(arg)*iw;
+% F3 = 2.0*kii*sin(arg)*iw; 
+% F4=-w_ref*sin(arg);
+% F5=cos(arg);
+% F6=(cos(arg)-1.0)*2.0*kii;
+% 
+% % Inicialização
+% ei1 = 0;
+% ei1a = 0;
+% xaa1 = 0;
+% xa1 = 0;
+% xb1 = 0;
 %--------------------------------------------------------------------
 %% Início do Looping
 while t<tf
     t = t + h;
     
-%     if t > tf/2
+%     if 
 %         sobretensao = 1;
 %     end 
 
 % % SOBRETENSÃO
-%     if sobretensao == 1
+%     if t > tf/2
 %         Vgm = 1.5*110*sqrt(2);
 %     end
     
@@ -228,31 +224,30 @@ while t<tf
         
 
         %% PI ressonante pt2
-        ei1a = ei1;
-        xaa1 = xa1;
-
-        ei1 = ig_error_ressonante;
-
-        xa1 = F1*xaa1+F2*xb1+F3*ei1a;
-        xb1 = F4*xaa1+F5*xb1+F6*ei1a;
-        
+%         ei1a = ei1;
+%         xaa1 = xa1;
+% 
+%         ei1 = ig_error_ressonante;
+% 
+%         xa1 = F1*xaa1+F2*xb1+F3*ei1a;
+%         xb1 = F4*xaa1+F5*xb1+F6*ei1a;	
 %         if(xa1 >  Ea) 
 %             xa1 =  Ea;
 %         end
 %         if(xa1 < -Ea) 
 %             xa1 = -Ea;
 %         end
-        
-        vg_ref = xa1 + 2.*kpi*ei1;
-        
+%         vg_ref = xa1 + 2.*kpi*ei1;
+%         
 %         if(vg_ref >  Ea) 
 %             vg_ref =  Ea;
 %         end
 %         if(vg_ref < -Ea) 
 %             vg_ref = -Ea;
 %         end
+
         %% Tensões de referência
-%         vg_ref = eg - Rg*ig - (Lg/htri)*ig_error;        
+        vg_ref = eg - Rg*ig - (Lg/htri)*ig_error;        
         vl_ref = Vel_ref*cos(w_ref*t + thetal_ref);
 %         vsh_ref = eg - Rs*is - (Ls/htri)*is_error;
 %         vel_ref = Vel_ref*cos(w_ref*t + thetal_ref);        

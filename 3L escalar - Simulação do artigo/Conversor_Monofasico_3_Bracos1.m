@@ -58,17 +58,19 @@ sign = -1;               % Sinal inicial da derivada (Comportamento decrescente)
 while t<tf
     t = t + h;
     
+    if vtriangle <= 0
+       vtriangle = -E/2;
+       sign = 1;
+    else
+        vtriangle = E/2;
+        sign = -1;
+    end    
+    
     % Onda triangular
     if t >= ttriangle
         ttriangle = ttriangle + htriangle;
         
-        if vtriangle <= 0
-           vtriangle = -E/2;
-           sign = 1;
-        else
-            vtriangle = E/2;
-            sign = -1;
-        end
+
         
         % Tensões médias nos braços
         va0_med = va0_int/htriangle;
@@ -84,15 +86,18 @@ while t<tf
         vl_ref = Vl_ref*cos(w_ref*t + thetal_ref);
         
         % Fator de repartição
-        VS_ref = [vg_ref,vl_ref,0];
-        vu_ref_max =  max(VS_ref);
-        vu_ref_min =  min(VS_ref);
-        vu_ref = E*(u - 1/2) - u*vu_ref_max + (u - 1)*vu_ref_min;
-        
+%         VS_ref = [vg_ref,vl_ref,0];
+%         vu_ref_max =  max(VS_ref);
+%         vu_ref_min =  min(VS_ref);
+%         vu_ref = E*(u - 1/2) - u*vu_ref_max + (u - 1)*vu_ref_min;
+        vu_ref = 0;
         % Tensões de polo de referência
         va0_ref = vu_ref;
-        vg0_ref = vg_ref + vu_ref;
-        vl0_ref = vl_ref + vu_ref;
+        vg0_ref = vg_ref;
+        vl0_ref = vl_ref;
+        
+%         vg0_ref = vg_ref + vu_ref;
+%         vl0_ref = vl_ref + vu_ref;
     end
     
     vtriangle = vtriangle +sign*dtriangle*h;
@@ -126,9 +131,10 @@ while t<tf
     vg0_int = vg0_int + vg0*h;
     vl0_int = vl0_int + vl0*h;
     
-    eg = 1*cos(2*pi*60*t);                    % Tensão de entrada
+    eg = 3*cos(2*pi*60*t);                    % Tensão de entrada
     vg = vg0 - va0;
     vl = vl0 - va0;
+    
     ig = ig*(1 - h*Rg/Lg) + (h/Lg)*(eg - vg); % Corrente do ramo g
     il = il*(1 - h*Rl/Ll) + (h/Ll)*vl;        % Corrente do ramo l   
     

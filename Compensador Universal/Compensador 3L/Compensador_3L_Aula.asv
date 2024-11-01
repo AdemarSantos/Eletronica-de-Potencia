@@ -11,9 +11,8 @@ Lg = 5E-3;               % Indutância de entrada
 Rl = 15;                 % Resistência da carga
 Ll = 15E-3;              % Indutância da carga
 
-%%%%%%%%%%
 Xg = Lg*(2*pi*60);
-Pl = 1000;
+Pl = 5000;
 Vlref = 220;
 FPl = 0.8;
 Sl  = Pl/FPl*exp(acos(FPl)*1i);   
@@ -27,7 +26,6 @@ Ig2    = roots([Rg -220 Pl]);
 Ig2    = min(Ig2);
 faseg = atan((-Ig2*Xg)/(220 - Ig2*Rg));
 Vgref = -Ig2*Xg/sin(faseg);
-%%%%%%%%%%
 
 
 %---------------- Parâmetros de Simulação ------------------
@@ -55,7 +53,7 @@ Ed = 340;                % Tensão do barramento CC
 Vl_ref = 220;             % Amplitude da tensão de referência braço L
 Vgm = 220;
 
-thetal_ref = pi/4;       % Fase da tensão de referência braço L
+thetal_ref = 0;       % Fase da tensão de referência braço L
 
 f_ref = 60;              % Frequência de referência
 w_ref = 2*pi*f_ref;      % Frequência angular de referência
@@ -78,19 +76,19 @@ P_error = 0;
 I_error = 0;
 
 vc_ref = Ed;
-vc = Ed;
+vc = 0;
 
 Ig0 = 3;
 
 %---------------- Inicialização da onda triangular ------------------
-ttriangle = 0;           % Tempo inicial da onda triangular
-ftriangle = 10E3;        % Frequência da onda triangular de 10 kHz
-htriangle = 1/ftriangle; % Período da onda triangular
+ttriangle = 0;            % Tempo inicial da onda triangular
+ftriangle = 10E3;         % Frequência da onda triangular de 10 kHz
+htriangle = 1/ftriangle;  % Período da onda triangular
 vtriangle = Ed/2;         % Tensão máxima da onda triangular
 dtriangle = Ed/htriangle; % Derivada da onda triangular (?V/?T)
-sign = -1;               % Sinal inicial da derivada (Comportamento decrescente)
+sign = -1;                % Sinal inicial da derivada (Comportamento decrescente)
 
-atrasoPWM = 0.5*2.*pi*60*htriangle;
+% atrasoPWM = 0.5*2.*pi*60*htriangle;
 while t<tf
     t = t + h;
     
@@ -99,7 +97,7 @@ while t<tf
     egt = egf;
     
 %     if t > tf/3               % Introdução de harmônicos à tensão da rede
-%         egt = 0.6*egf + 0.2*egh;
+%         egt = 0.6*egf + 0.3*egh;
 % %          egt = 0; % simulando uma falta da rede
 %     else
 %         egt = egf;
@@ -120,16 +118,14 @@ while t<tf
         ig_error = (ig_ref - ig);
         
         % Tensões de referência
-        %vg_ref = Vg_ref*cos(w_ref*t);
         vg_ref = egt - Rg*ig - (Lg/htriangle)*ig_error;
-        vg2_ref  = sqrt(2)*Vgref*cos(2*pi*60*t + faseg + atrasoPWM);
         vl_ref = Vl_ref*sqrt(2)*cos(w_ref*t + thetal_ref);        
 
         % Fator de repartição
         VS_ref = [vg_ref,vl_ref,0];
         vu_ref_max =  Ed/2 - max(VS_ref);
         vu_ref_min = -Ed/2 - min(VS_ref);
-        vu_ref = (vu_ref_max+vu_ref_min)/2;
+        vu_ref = (vu_ref_max + vu_ref_min)/2;
         
         % Tensões de polo de referência
         va0_ref = vu_ref;
@@ -193,7 +189,7 @@ while t<tf
     vl = vl0 - va0;
     
     % Integração numérica das correntes ig e il
-    ig = ig*(1 - h*Rg/Lg) + (h/Lg)*(egt - vg); % Corrente do ramo g
+    ig = ig*(1 - h*Rg/Lg) + (h/Lg)*(egt - vg);  % Corrente do ramo g
     ilf = ilf*(1 - h*Rl/Ll) + (h/Ll)*vl;        % Corrente do ramo l   
     
 %     if t > 2*tf/3              % Introdução de harmônicos à tensão da carga     
@@ -202,19 +198,22 @@ while t<tf
 %         ilt = ilf + ilh;
 %     else
 %         ilt = ilf;
-%     end   
+%     end
+
     ilt = ilf;
     ia = ig - ilf;
     
-%     Controle do barramento
+    % Controle do barramento
     ic = ig*qg - ilt*ql - ia*qa;    % Corrente fornecida pelo capacitor
     vc = vc + h*(ic/Cap);
+%     vc = 1.0*vc_ref;
     
     if tsave <= t
         tsave = tsave + hsave;
         n = n + 1;
         Ts(n) = t;
         
+        egs(n) = egt;
         % Tensões de polo de referência
         va0_refs(n) = va0_ref;
         vg0_refs(n) = vg0_ref;
@@ -239,10 +238,10 @@ while t<tf
         vl0_meds(n) = vl0_med;   
         
         % Tensão de referência do barramento
-%         vc_refs(n) = vc_ref;
+        vc_refs(n) = vc_ref;
         
         % Tensão do barramento
-%         vcs(n) = vc;       % Tensão do barramento
+        vcs(n) = vc;       % Tensão do barramento
         
         % Corrente de referência do controlador
         ig_refs(n) = ig_ref;
@@ -254,14 +253,18 @@ while t<tf
         
         % Portadora triangular
         vtriangles(n) = vtriangle;
-        
-        %%%%%%%%%%%%%%%%%
-        vcs(n)=vc;
-        vg2_refs(n)=vg2_ref;
-        %%%%%%%%%%%%%%%%%
     
     end
 end
+
+% %---- Saída do conversor L
+figure('Name','Tensão da rede e corrente da rede')
+plot(Ts,egs,Ts,10*igs,'r-','LineWidth',1.5),zoom
+title('Tensão da rede e corrente da rede','FontSize',18)
+legend('eg','10*ig')
+xlabel("Tempo (s)")
+ylabel("Saída")
+grid minor
 
 % SIMULAÇÃO DO LADO L
 %---- Saída do conversor L
@@ -271,7 +274,7 @@ title('Tensão de saída do conversor L','FontSize',18)
 legend('vl0_{pwm}','vl_{med}','vl_{ref}')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
-grid()
+grid minor
 
 % SIMULAÇÃO DO LADO G
 %---- Saída do conversor G
@@ -281,7 +284,7 @@ title('Tensão de saída do conversor G','FontSize',18)
 legend('vg0_{pwm}','vg_{med}','vg_{ref}')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
-grid()
+grid minor
 
 %---- Correntes
 figure('Name','Corrente do circuito: Lado G, A e L')
@@ -290,7 +293,7 @@ title('Corrente do circuito: ig, il e ia')
 xlabel("Tempo (s)")
 ylabel("Corrente (A)")
 legend('ig','il','ia','FontSize',18)
-grid()
+grid minor
 
 %---- Tensões médias
 figure('Name','Tensões médias vg e vl')
@@ -299,7 +302,7 @@ title('Tensões médias vg e vl','FontSize',18)
 legend('vg_{med}','vl_{med}')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
-grid()
+grid minor
 
 %---- Corrente e tensão: braço G
 figure('Name','Corrente e tensão: braço G')
@@ -308,8 +311,7 @@ title('Corrente e tensão: braço G','FontSize',18)
 legend('vg_{med}','vg_{ref}','ig')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)| Corrente(A)")
-%axis([0.28 0.42 -100 100])
-grid()
+grid minor
 
 %---- Corrente e tensão: braço L
 figure('Name','Corrente e tensão: braço L')
@@ -318,12 +320,9 @@ title('Corrente e tensão: braço L','FontSize',18)
 legend('vl_{med}','vl_{ref}','il')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)| Corrente(A)")   
-%axis([0.60 0.74 -100 100])
-grid()
+grid minor
 
 figure(10)
-plot(Ts,vcs)
-
-figure(11)
-plot(Ts,vg2_refs,Ts,vg_refs)
-legend('calculado','controlado')
+plot(Ts,vcs,Ts,vc_refs)
+legend('VC atual','Vc Ref')
+grid minor

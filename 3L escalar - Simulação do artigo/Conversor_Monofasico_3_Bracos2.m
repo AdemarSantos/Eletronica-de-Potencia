@@ -82,8 +82,8 @@ while t<tf
         
         % Fator de repartição
         VS_ref = [vg_ref,vl_ref,0];
-        vu_ref_max =  max(VS_ref);
-        vu_ref_min =  min(VS_ref);
+        vu_ref_max = -E/2 + max(VS_ref);
+        vu_ref_min = -E/2 - min(VS_ref);
         vu_ref = E*(u - 1/2) - u*vu_ref_max + (u - 1)*vu_ref_min;
         
         % Tensões de polo de referência
@@ -126,6 +126,7 @@ while t<tf
     eg = Vg*cos(2*pi*60*t);                    % Tensão de entrada
     vg = vg0 - va0;
     vl = vl0 - va0;
+    
     ig = ig*(1 - h*Rg/Lg) + (h/Lg)*(eg - vg); % Corrente do ramo g
     il = il*(1 - h*Rl/Ll) + (h/Ll)*vl;        % Corrente do ramo l   
     
@@ -215,7 +216,7 @@ title('Tensão de saída do conversor G','FontSize',18)
 legend('vg_{pwm}','vg_{med}')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
-axis([42E-4 42E-4+2/60 -7.1 7.1])
+% axis([42E-4 42E-4+2/60 -7.1 7.1])
 grid()
 
 %---- Corrente do circuito lado G
@@ -235,7 +236,7 @@ title('Tensão de saída do conversor L','FontSize',18)
 legend('vg_{pwm}','vg_{med}')
 xlabel("Tempo (s)")
 ylabel("Tensão (V)")
-axis([42E-4 42E-4+2/60 -7.1 7.1])
+% axis([42E-4 42E-4+2/60 -7.1 7.1])
 grid()
 
 %---- Corrente do circuito lado L

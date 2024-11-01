@@ -776,11 +776,11 @@ end
 
 %% THD
 
-wthd_vg = wthdf(vshs, 1/h, f_ref)
-wthd_vl = wthdf(vses, 1/h, f_ref)
-% 
-thd_ig = thdf(igs, 1e7, 60)
-thd_il = thdf(ils, 1e7, 60)
+% wthd_vg = wthdf(vshs, 1/h, f_ref)
+% wthd_vl = wthdf(vses, 1/h, f_ref)
+% % 
+% thd_ig = thdf(igs, 1e7, 60)
+% thd_il = thdf(ils, 1e7, 60)
 
 %% Média de chaveamento
 m_qgb1 = mean(qgb1s);
